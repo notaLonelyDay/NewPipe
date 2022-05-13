@@ -11,16 +11,22 @@ import androidx.annotation.StringRes;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
+import org.schabi.newpipe.download.DownloadDialog;
+import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * <p>
@@ -109,6 +115,35 @@ public enum StreamDialogDefaultEntry {
     SHARE(R.string.share, (fragment, item) ->
             ShareUtils.shareText(fragment.requireContext(), item.getName(), item.getUrl(),
                     item.getThumbnailUrl())),
+
+    DOWNLOAD(R.string.download, (fragment, item) -> ExtractorHelper.getStreamInfo(
+                    item.getServiceId(),
+                    item.getUrl(),
+                    false
+            )
+            .subscribeOn(Schedulers.io())
+            .subscribe((info) -> {
+                        final ArrayList<VideoStream> sortedVideoStreamsList = new ArrayList<>(
+                                ListHelper.getSortedStreamVideosList(fragment.requireContext(),
+                                        info.getVideoStreams(), null, false, false));
+                        final int index = ListHelper.getDefaultResolutionIndex(
+                                fragment.requireContext(), sortedVideoStreamsList);
+
+                        final DownloadDialog downloadDialog =
+                                DownloadDialog.newInstance(info);
+                        downloadDialog.setVideoStreams(sortedVideoStreamsList);
+                        downloadDialog.setSelectedAudioStream(index);
+                        downloadDialog.setAudioStreams(info.getAudioStreams());
+                        downloadDialog.setSubtitleStreams(info.getSubtitles());
+                        downloadDialog.show(
+                                fragment.getChildFragmentManager(),
+                                "downloadDialog"
+                        );
+                    },
+                    throwable -> {
+                    }
+            )
+    ),
 
     OPEN_IN_BROWSER(R.string.open_in_browser, (fragment, item) ->
             ShareUtils.openUrlInBrowser(fragment.requireContext(), item.getUrl())),
