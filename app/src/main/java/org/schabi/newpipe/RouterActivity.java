@@ -677,18 +677,8 @@ public class RouterActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    final List<VideoStream> sortedVideoStreams = ListHelper
-                            .getSortedStreamVideosList(this, result.getVideoStreams(),
-                                    result.getVideoOnlyStreams(), false, false);
-                    final int selectedVideoStreamIndex = ListHelper
-                            .getDefaultResolutionIndex(this, sortedVideoStreams);
-
+                    final DownloadDialog downloadDialog = DownloadDialog.newInstance(this, result);
                     final FragmentManager fm = getSupportFragmentManager();
-                    final DownloadDialog downloadDialog = DownloadDialog.newInstance(result);
-                    downloadDialog.setVideoStreams(sortedVideoStreams);
-                    downloadDialog.setAudioStreams(result.getAudioStreams());
-                    downloadDialog.setSelectedVideoStream(selectedVideoStreamIndex);
-                    downloadDialog.setOnDismissListener(dialog -> finish());
                     downloadDialog.show(fm, "downloadDialog");
                     fm.executePendingTransactions();
                 }, throwable ->
