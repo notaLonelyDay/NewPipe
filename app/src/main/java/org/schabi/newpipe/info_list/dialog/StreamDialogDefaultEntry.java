@@ -8,6 +8,7 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
+import androidx.fragment.app.FragmentManager;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
@@ -122,23 +123,13 @@ public enum StreamDialogDefaultEntry {
                     false
             )
             .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe((info) -> {
-                        final ArrayList<VideoStream> sortedVideoStreamsList = new ArrayList<>(
-                                ListHelper.getSortedStreamVideosList(fragment.requireContext(),
-                                        info.getVideoStreams(), null, false, false));
-                        final int index = ListHelper.getDefaultResolutionIndex(
-                                fragment.requireContext(), sortedVideoStreamsList);
-
                         final DownloadDialog downloadDialog =
-                                DownloadDialog.newInstance(info);
-                        downloadDialog.setVideoStreams(sortedVideoStreamsList);
-                        downloadDialog.setSelectedAudioStream(index);
-                        downloadDialog.setAudioStreams(info.getAudioStreams());
-                        downloadDialog.setSubtitleStreams(info.getSubtitles());
-                        downloadDialog.show(
-                                fragment.getChildFragmentManager(),
-                                "downloadDialog"
-                        );
+                                DownloadDialog.newInstance(fragment.requireContext(), info);
+                        FragmentManager fm = fragment.getChildFragmentManager();
+                        downloadDialog.show(fm, "downloadDialog");
+                        fm.executePendingTransactions();
                     },
                     throwable -> {
                     }
